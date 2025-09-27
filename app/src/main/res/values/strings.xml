@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">Family Docs Secure</string>
+    
+    <!-- Main Activity -->
+    <string name="search_hint">Search family members...</string>
+    <string name="no_members_found">No members found</string>
+    <string name="no_members_added">No family members added yet.\nTap + to add your first family member.</string>
+    
+    <!-- Add Member Activity -->
+    <string name="add_member_title">Add Family Member</string>
+    <string name="member_name_hint">Full Name</string>
+    <string name="relation_hint">Relation</string>
+    <string name="select_profile_image">Select Profile Image</string>
+    <string name="image_selected">Image Selected</string>
+    <string name="save_member">Save Member</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Document Upload Activity -->
+    <string name="add_document_title">Add Document</string>
+    <string name="document_image_label">Document Image</string>
+    <string name="pdf_document_label">PDF Document (Optional)</string>
+    <string name="select_image">Select Image</string>
+    <string name="select_pdf_document">Select PDF Document</string>
+    <string name="change_image">Change Image</string>
+    <string name="change_document">Change Document</string>
+    <string name="save_document">Save Document</string>
+    <string name="no_image_selected">No image selected</string>
+    <string name="no_document_selected">No document selected</string>
+    <string name="image_selected_status">Image selected</string>
+    
+    <!-- Document Viewer Activity -->
+    <string name="download_image">Download Image</string>
+    <string name="download_document">Download Document</string>
+    <string name="add_document">Add Document</string>
+    <string name="update_document">Update Document</string>
+    <string name="loading_document">Loading document...</string>
+    
+    <!-- Document Types -->
+    <string name="aadhaar_card">Aadhaar Card</string>
+    <string name="voter_id">Voter ID</string>
+    <string name="pan_card">PAN Card</string>
+    <string name="passport">Passport</string>
+    <string name="driving_license">Driving License</string>
+    
+    <!-- Success Messages -->
+    <string name="member_added_success">Member added successfully</string>
+    <string name="document_saved_success">Document saved successfully</string>
+    <string name="image_downloaded_success">Image downloaded to Downloads folder</string>
+    <string name="document_downloaded_success">Document downloaded to Downloads folder</string>
+    
+    <!-- Error Messages -->
+    <string name="error_saving_member">Error saving member</string>
+    <string name="error_saving_document">Error saving document</string>
+    <string name="error_loading_document">Error loading document</string>
+    <string name="error_downloading">Download failed</string>
+    <string name="permission_required">Please grant all permissions to use this feature</string>
+    <string name="no_image_to_download">No image available to download</string>
+    <string name="no_document_to_download">No document available to download</string>
+</resources>
