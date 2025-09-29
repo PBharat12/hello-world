@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -13,9 +15,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-// import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener
 import kotlinx.coroutines.launch
-import com.familydocs.secure.databinding.ActivityDocumentViewerBinding
+import com.familydocs.secure.databinding.ActivityAlternativeDocumentViewerBinding
 import com.familydocs.secure.data.database.AppDatabase
 import com.familydocs.secure.data.repository.FamilyRepository
 import com.familydocs.secure.utils.FileEncryptionHelper
@@ -24,9 +25,9 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-class DocumentViewerActivity : AppCompatActivity() {
+class AlternativeDocumentViewerActivity : AppCompatActivity() {
     
-    private lateinit var binding: ActivityDocumentViewerBinding
+    private lateinit var binding: ActivityAlternativeDocumentViewerBinding
     private lateinit var repository: FamilyRepository
     private lateinit var encryptionHelper: FileEncryptionHelper
     
@@ -41,13 +42,14 @@ class DocumentViewerActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityDocumentViewerBinding.inflate(layoutInflater)
+        binding = ActivityAlternativeDocumentViewerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
         memberId = intent.getLongExtra("MEMBER_ID", 0)
         documentType = intent.getStringExtra("DOCUMENT_TYPE") ?: ""
         
         setupDatabase()
+        setupWebView()
         setupClickListeners()
         loadDocument()
         checkPermissions()
@@ -55,7 +57,6 @@ class DocumentViewerActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
-        // Reload document when returning from upload activity
         loadDocument()
     }
     
@@ -66,6 +67,17 @@ class DocumentViewerActivity : AppCompatActivity() {
             database.documentDao()
         )
         encryptionHelper = FileEncryptionHelper(this)
+    }
+    
+    private fun setupWebView() {
+        binding.webViewPdf.apply {
+            webViewClient = WebViewClient()
+            settings.apply {
+                javaScriptEnabled = true
+                allowFileAccess = true
+                allowContentAccess = true
+            }
+        }
     }
     
     private fun setupClickListeners() {
@@ -103,18 +115,39 @@ class DocumentViewerActivity : AppCompatActivity() {
                     currentImagePath?.let { path ->
                         try {
                             val decryptedImageFile = encryptionHelper.decryptFile(File(path))
-                            Glide.with(this@DocumentViewerActivity)
+                            Glide.with(this@AlternativeDocumentViewerActivity)
                                 .load(decryptedImageFile)
                                 .into(binding.imageViewDocument)
                         } catch (e: Exception) {
-                            ValidationHelper.showErrorToast(this@DocumentViewerActivity, 
+                            ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity, 
                                 "Error loading image: ${e.message}")
                         }
                     }
                     
-                    // PDF document available but using external viewer
+                    // Handle PDF document
                     currentDocumentPath?.let { path ->
-                        binding.textViewDocumentStatus.text = "PDF document available. Use download or external app to view."
+                        try {
+                            val decryptedPdfFile = encryptionHelper.decryptFile(File(path))
+                            // Use Google Docs Viewer for PDF display
+                            val googleDocsUrl = "https://docs.google.com/gview?embedded=true&url=${Uri.fromFile(decryptedPdfFile)}"
+                            binding.webViewPdf.loadUrl(googleDocsUrl)
+                            binding.buttonOpenPdfExternal.isEnabled = true
+                        } catch (e: Exception) {
+                            binding.webViewPdf.loadData(
+                                "<html><body><h3>PDF document available but cannot be previewed. Use 'Open in External App' or Download.</h3></body></html>",
+                                "text/html",
+                                "UTF-8"
+                            )
+                            ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity, 
+                                "PDF preview not available: ${e.message}")
+                        }
+                    } ?: run {
+                        binding.webViewPdf.loadData(
+                            "<html><body><h3>No PDF document available. Only image is stored.</h3></body></html>",
+                            "text/html",
+                            "UTF-8"
+                        )
+                        binding.buttonOpenPdfExternal.isEnabled = false
                     }
                     
                     binding.textViewDocumentStatus.text = "${getDocumentTypeName(documentType)} available"
@@ -122,6 +155,11 @@ class DocumentViewerActivity : AppCompatActivity() {
                 } else {
                     binding.textViewDocumentStatus.text = "No ${getDocumentTypeName(documentType)} found. Click to add."
                     binding.buttonAddDocument.text = "Add Document"
+                    binding.webViewPdf.loadData(
+                        "<html><body><h3>No document found. Please add a document first.</h3></body></html>",
+                        "text/html",
+                        "UTF-8"
+                    )
                 }
             } catch (e: Exception) {
                 ValidationHelper.showErrorToast(this, "Error loading document: ${e.message}")
@@ -158,10 +196,10 @@ class DocumentViewerActivity : AppCompatActivity() {
                         }
                     }
                     
-                    ValidationHelper.showSuccessToast(this@DocumentViewerActivity, 
+                    ValidationHelper.showSuccessToast(this@AlternativeDocumentViewerActivity, 
                         "Image downloaded to Downloads folder")
                 } catch (e: Exception) {
-                    ValidationHelper.showErrorToast(this@DocumentViewerActivity, 
+                    ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity, 
                         "Download failed: ${e.message}")
                 }
             }
@@ -186,10 +224,10 @@ class DocumentViewerActivity : AppCompatActivity() {
                         }
                     }
                     
-                    ValidationHelper.showSuccessToast(this@DocumentViewerActivity, 
+                    ValidationHelper.showSuccessToast(this@AlternativeDocumentViewerActivity, 
                         "Document downloaded to Downloads folder")
                 } catch (e: Exception) {
-                    ValidationHelper.showErrorToast(this@DocumentViewerActivity, 
+                    ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity, 
                         "Download failed: ${e.message}")
                 }
             }
@@ -214,7 +252,7 @@ class DocumentViewerActivity : AppCompatActivity() {
                     
                     // Create content URI using FileProvider
                     val contentUri = FileProvider.getUriForFile(
-                        this@DocumentViewerActivity,
+                        this@AlternativeDocumentViewerActivity,
                         "${packageName}.fileprovider",
                         tempFile
                     )
@@ -229,12 +267,12 @@ class DocumentViewerActivity : AppCompatActivity() {
                     if (intent.resolveActivity(packageManager) != null) {
                         startActivity(intent)
                     } else {
-                        ValidationHelper.showErrorToast(this@DocumentViewerActivity,
+                        ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity,
                             "No app found to open PDF files")
                     }
                     
                 } catch (e: Exception) {
-                    ValidationHelper.showErrorToast(this@DocumentViewerActivity, 
+                    ValidationHelper.showErrorToast(this@AlternativeDocumentViewerActivity, 
                         "Error opening PDF: ${e.message}")
                 }
             }

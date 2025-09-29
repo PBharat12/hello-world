@@ -64,8 +64,8 @@ dependencies {
     // File picker
     implementation("com.github.dhaval2404:imagepicker:2.1")
     
-    // PDF viewer
-    implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
+    // PDF viewer - Alternative approach using WebView
+    // implementation("com.github.barteksc:android-pdf-viewer:2.8.2")
     
     // Permissions
     implementation("com.karumi:dexter:6.2.3")
